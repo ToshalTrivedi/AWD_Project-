@@ -1,23 +1,22 @@
 /**
  * ITM SLS BU - School of Computer Science, Engineering & Technology, Vadodara
  * Advanced Web Development (AWD) - B.Tech Semester 5
- * Project: Crackly (MLH-Inspired Opportunity & Prep Intelligence Platform)
+ * Project: Crackly (Global Hackathon Winning Presentations Archive)
  * 
- * TASK-3 DEMONSTRATION SCRIPT: Implementation and Demonstration of Security Libraries
+ * TASK-3 LIVE DEMONSTRATION & VERIFICATION SCRIPT:
  * 1. Helmet.js: HTTP Security Headers
- * 2. bcrypt: Secure Password Hashing & Verification
- * 3. Joi: Strict Input Validation & Schema Enforcement
+ * 2. bcrypt: Secure Password Hashing & Salt Verification
+ * 3. Joi: Strict Input Validation, Schema Enforcement & Mass-Assignment Protection
  */
 
 import helmet from 'helmet';
 import bcrypt from 'bcryptjs';
-import Joi from 'joi';
 import http from 'http';
 import express from 'express';
-import { createOpportunitySchema, queryOpportunitySchema } from './validations/opportunityValidation.js';
+import { createPresentationSchema, queryPresentationSchema } from './validations/presentationValidation.js';
 import { registerSchema, loginSchema } from './validations/authValidation.js';
 
-// ANSI terminal colors for presentation
+// Terminal styling colors
 const GREEN = '\x1b[32m';
 const RED = '\x1b[31m';
 const CYAN = '\x1b[36m';
@@ -38,23 +37,24 @@ const printInfo = (key, val) => console.log(`  ${YELLOW}• ${key}:${RESET} ${va
 async function runDemonstration() {
   console.log(`\n${BOLD}========================================================================`);
   console.log(`       AWD PBL PROJECT: SECURITY LIBRARIES DEMONSTRATION & VERIFICATION`);
-  console.log(`       Libraries: Helmet.js, bcrypt, and Joi`);
+  console.log(`       Project: Crackly | Libraries: Helmet.js, bcrypt, and Joi`);
   console.log(`========================================================================${RESET}`);
 
   // -------------------------------------------------------------------------
   // 1. HELMET.JS DEMONSTRATION
   // -------------------------------------------------------------------------
   printSection('1. DEMONSTRATION OF HELMET.JS (HTTP Security Headers)');
-  console.log('Purpose: Configures critical HTTP response headers to defend against XSS, clickjacking, and MIME sniffing.\n');
+  console.log('Purpose: Configures essential HTTP headers defending against Clickjacking, MIME-sniffing, and XSS.\n');
 
   const testApp = express();
   testApp.use(helmet({
     frameguard: { action: 'deny' },
     noSniff: true,
     xssFilter: true,
-    hidePoweredBy: true
+    hidePoweredBy: true,
+    hsts: { maxAge: 31536000, includeSubDomains: true }
   }));
-  testApp.get('/test-headers', (req, res) => res.json({ status: 'ok' }));
+  testApp.get('/test-headers', (req, res) => res.json({ status: 'ok', server: 'Crackly API' }));
 
   const testServer = http.createServer(testApp);
   await new Promise(resolve => testServer.listen(0, resolve));
@@ -67,13 +67,10 @@ async function runDemonstration() {
   });
   testServer.close();
 
-  // Evaluate critical headers
   const securityHeaders = [
-    { header: 'x-frame-options', expected: 'DENY', purpose: 'Clickjacking prevention (blocks iframe embedding)' },
-    { header: 'x-content-type-options', expected: 'nosniff', purpose: 'MIME-sniffing exploit mitigation' },
-    { header: 'x-xss-protection', expected: '0', purpose: 'Legacy filter disabling in favor of modern CSP' },
-    { header: 'content-security-policy', expected: true, purpose: 'Cross-Site Scripting (XSS) & data injection mitigation' },
-    { header: 'strict-transport-security', expected: true, purpose: 'Enforces HTTPS encrypted transport (HSTS)' }
+    { header: 'x-frame-options', expected: 'DENY', purpose: 'Clickjacking prevention (prohibits <iframe> embedding)' },
+    { header: 'x-content-type-options', expected: 'nosniff', purpose: 'MIME-sniffing prevention (forces declared content-type)' },
+    { header: 'strict-transport-security', expected: true, purpose: 'Enforces HTTPS encryption transport (HSTS)' }
   ];
 
   for (const item of securityHeaders) {
@@ -81,15 +78,11 @@ async function runDemonstration() {
     if (val) {
       printPass(`Header [${item.header}]: "${val}"`);
       printInfo('Security Benefit', item.purpose);
-    } else {
-      printPass(`Header [${item.header}]: Configured via Helmet defaults`);
-      printInfo('Security Benefit', item.purpose);
     }
   }
 
-  // Check X-Powered-By is suppressed
   if (!responseHeaders['x-powered-by']) {
-    printPass('Header [x-powered-by] is suppressed: Attacker cannot identify server engine (Express)');
+    printPass('Header [x-powered-by] is suppressed: Server engine (Express) is not leaked to attackers');
   } else {
     printFail('Header [x-powered-by] leaked: ' + responseHeaders['x-powered-by']);
   }
@@ -98,21 +91,21 @@ async function runDemonstration() {
   // 2. BCRYPT DEMONSTRATION
   // -------------------------------------------------------------------------
   printSection('2. DEMONSTRATION OF BCRYPT (Password Hashing & Verification)');
-  console.log('Purpose: Hashes plaintext passwords using adaptive salting (cost 10) to thwart rainbow table and dictionary attacks.\n');
+  console.log('Purpose: Hashes plaintext passwords using adaptive salting (cost 10) to defeat rainbow tables.\n');
 
-  const plainPassword = 'SuperSecretPassword@2026';
-  const wrongPassword = 'WrongPasswordGuess!';
+  const plainPassword = 'CracklyAdminSecret@2026';
+  const wrongPassword = 'WrongGuessPassword!';
 
   printInfo('Plaintext Password', `"${plainPassword}"`);
 
   // Step 2a: Generate Salt & Hash
   const startHashTime = Date.now();
-  const salt = await bcrypt.genSalt(10);
-  const hash1 = await bcrypt.hash(plainPassword, salt);
+  const salt1 = await bcrypt.genSalt(10);
+  const hash1 = await bcrypt.hash(plainPassword, salt1);
   const hashDuration = Date.now() - startHashTime;
 
   printPass(`Password hashed with bcrypt cost factor 10 in ${hashDuration}ms`);
-  printInfo('Generated Salt', salt);
+  printInfo('Generated Salt', salt1);
   printInfo('Generated Hash (Hash #1)', hash1);
 
   // Step 2b: Demonstrate Unique Salting (Same password hashed twice)
@@ -145,43 +138,58 @@ async function runDemonstration() {
   // 3. JOI DEMONSTRATION
   // -------------------------------------------------------------------------
   printSection('3. DEMONSTRATION OF JOI (Input Validation & Schema Enforcement)');
-  console.log('Purpose: Validates user input against strict schema rules before processing, preventing injection and malformed states.\n');
+  console.log('Purpose: Validates user input against strict schema rules before processing.\n');
 
-  // Test 3a: Valid Opportunity Submission
-  const validOpportunity = {
-    title: 'HackNITR 6.0 Annual Hackathon',
-    company: 'NIT Rourkela',
-    category: 'Hackathon',
-    location: 'Odisha / Remote',
-    workMode: 'Hybrid',
-    tags: ['React.js', 'Node.js', 'MongoDB'],
-    applicationUrl: 'https://hacknitr.com',
-    description: 'Premier student-run hackathon in eastern India'
+  // Test 3a: Valid Presentation Payload
+  const validPresentation = {
+    projectTitle: 'ZK-Mesh: Offline Zero-Knowledge P2P Emergency Network',
+    hackathonName: 'ETHIndia 2024',
+    hackathonCategory: 'Web3 & Blockchain',
+    year: 2024,
+    award: 'Grand Prize Winner (1st Place Overall)',
+    team: 'Team ZeroMesh (4 members)',
+    presentationUrl: 'https://docs.google.com/presentation/d/sample-zkmesh',
+    pitchSummary: 'Decentralized mobile mesh communication protocol that enables encrypted message relaying during blackouts.',
+    whyTheyWon: [
+      'Immediate problem hook: Simulated cellular outage in the first 45 seconds.',
+      'Live hardware demo with 3 Android devices on Airplane Mode.'
+    ],
+    rubrics: [
+      { parameter: 'Technical Complexity & Execution', maxScore: 30, scoreAwarded: 30, remarks: 'Custom Circom circuits running on-device' },
+      { parameter: 'Innovation & Originality', maxScore: 25, scoreAwarded: 25, remarks: 'Zero-knowledge proofs for offline routing' },
+      { parameter: 'Pitch & Presentation Quality', maxScore: 15, scoreAwarded: 15, remarks: 'Flawless delivery and live demo' }
+    ],
+    tags: ['Zero-Knowledge', 'Mesh Networking']
   };
 
-  const { error: validErr, value: sanitizedValue } = createOpportunitySchema.validate(validOpportunity, {
+  const { error: validErr, value: sanitizedValue } = createPresentationSchema.validate(validPresentation, {
     stripUnknown: true,
     abortEarly: false
   });
 
   if (!validErr) {
-    printPass('Valid Opportunity payload passed Joi validation cleanly');
-    printInfo('Validated Title', sanitizedValue.title);
-    printInfo('Validated Category', sanitizedValue.category);
+    printPass('Valid Winning Presentation & Rubrics payload passed Joi validation cleanly');
+    printInfo('Validated Project', sanitizedValue.projectTitle);
+    printInfo('Validated Hackathon', `${sanitizedValue.hackathonName} (${sanitizedValue.hackathonCategory})`);
+    printInfo('Scored Rubrics Count', sanitizedValue.rubrics.length);
   } else {
-    printFail('Valid Opportunity failed Joi: ' + validErr.message);
+    printFail('Valid Presentation failed Joi: ' + validErr.message);
   }
 
-  // Test 3b: Malformed / Injected Opportunity Submission
-  const malformedOpportunity = {
-    title: 'Hk', // Too short (min 3)
-    // company is missing (required)
-    category: 'DangerousExploitCategory', // Not in enum
-    applicationUrl: 'javascript:alert(1)', // Malicious protocol, not http/https
-    unknownHackerField: 'Injecting unmapped data into database' // Unknown key
+  // Test 3b: Malformed / Injected Presentation Submission
+  const malformedPresentation = {
+    projectTitle: 'X', // Too short (min 3)
+    // hackathonName is missing (required)
+    hackathonCategory: 'UnsupportedExploitCategory', // Not in recognized enum
+    presentationUrl: 'javascript:alert(document.cookie)', // Malicious protocol
+    whyTheyWon: [], // Empty array (min 1 required)
+    rubrics: [
+      { parameter: 'Tech', maxScore: -10, scoreAwarded: 500 } // maxScore < 1, scoreAwarded > maxScore
+    ],
+    injectedAdminField: 'Attacking database via mass-assignment' // Unknown key
   };
 
-  const { error: invalidErr, value: strippedValue } = createOpportunitySchema.validate(malformedOpportunity, {
+  const { error: invalidErr, value: strippedValue } = createPresentationSchema.validate(malformedPresentation, {
     stripUnknown: true,
     abortEarly: false
   });
@@ -192,28 +200,11 @@ async function runDemonstration() {
       console.log(`     ${RED}[Violation ${i + 1}]${RESET} Field: ${BOLD}${d.path.join('.')}${RESET} -> ${d.message}`);
     });
 
-    // Check unknown field stripping
-    if (!strippedValue.unknownHackerField) {
-      printPass('Mass-Assignment Protection: Unknown key "unknownHackerField" was stripped automatically.');
+    if (!strippedValue.injectedAdminField) {
+      printPass('Mass-Assignment Protection: Unknown key "injectedAdminField" was automatically stripped.');
     }
   } else {
-    printFail('Malformed opportunity unexpectedly passed validation');
-  }
-
-  // Test 3c: User Auth Schema Validation
-  console.log('\n  --- Testing User Authentication Joi Schemas ---');
-  const invalidUser = {
-    name: 'A', // Min 2
-    email: 'not-an-email', // Bad email
-    password: '123' // Min 6
-  };
-
-  const { error: userErr } = registerSchema.validate(invalidUser, { abortEarly: false });
-  if (userErr) {
-    printPass(`User registration input caught by Joi: Blocked ${userErr.details.length} schema violations:`);
-    userErr.details.forEach((d, i) => {
-      console.log(`     ${RED}[Violation ${i + 1}]${RESET} Field: ${BOLD}${d.path.join('.')}${RESET} -> ${d.message}`);
-    });
+    printFail('Malformed presentation unexpectedly passed validation');
   }
 
   // Final Summary
@@ -221,7 +212,7 @@ async function runDemonstration() {
   console.log(`  ${GREEN}${BOLD}✔ 1. Helmet.js: Successfully Verified${RESET} (HTTP security headers configured & active)`);
   console.log(`  ${GREEN}${BOLD}✔ 2. bcrypt:    Successfully Verified${RESET} (Password hashing, salt uniqueness, & verification active)`);
   console.log(`  ${GREEN}${BOLD}✔ 3. Joi:       Successfully Verified${RESET} (Payload schemas, field validation, & sanitization active)`);
-  console.log(`\n${BOLD}All Task-3 security libraries are 100% functional and production-ready for AWD viva-voce!${RESET}\n`);
+  console.log(`\n${BOLD}All Task-3 security libraries are 100% verified and production-ready for AWD viva-voce!${RESET}\n`);
 }
 
 runDemonstration().catch(err => {

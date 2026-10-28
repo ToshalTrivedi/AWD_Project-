@@ -1,14 +1,13 @@
 {
-  "name": "my-mlh-platform-server",
+  "name": "crackly-server",
   "version": "1.0.0",
-  "description": "Express REST API backend for MLH-Inspired Opportunity & Prep Intelligence Platform",
+  "description": "Express REST API backend for Crackly — Global Hackathon Winning Presentations Archive",
   "main": "server.js",
   "type": "module",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
-    "seed": "node seed.js",
-    "demonstrate:security": "node demonstrate_security.js"
+    "demonstrate:security": "node test_security.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

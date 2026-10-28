@@ -7,13 +7,14 @@ import mongoose from 'mongoose';
 let isConnected = false;
 
 export const connectDB = async () => {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/mlh_opportunities';
+  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/crackly';
 
   // Sanitize URI for safe console logging
   const sanitizedUri = uri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@');
 
   try {
     mongoose.set('strictQuery', false);
+    mongoose.set('bufferCommands', false); // Fail-fast so offline fallback triggers immediately
 
     mongoose.connection.on('connected', () => {
       isConnected = true;

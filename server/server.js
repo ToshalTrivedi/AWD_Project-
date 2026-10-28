@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { connectDB, getDbStatus } from './config/db.js';
-import opportunityRoutes from './routes/opportunityRoutes.js';
+import presentationRoutes from './routes/presentationRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 
 // Load environment configuration
@@ -93,13 +93,13 @@ app.get('/api/health', (req, res) => {
       bcrypt: 'Active (Password Hashing & Verification)',
       joi: 'Active (Strict Schema Input Validation)'
     },
-    platform: 'MLH-Inspired Opportunity & Prep Intelligence Platform'
+    platform: 'Crackly - Global Hackathon Winning Presentations & Rubrics Archive'
   });
 });
 
 // 6. Mount API Routes
 app.use('/api/auth', authRoutes); // User Registration & Login (bcrypt + Joi)
-app.use('/api/opportunities', opportunityRoutes); // Opportunity Catalog (Joi)
+app.use('/api/presentations', presentationRoutes); // Winning Presentations & Rubrics (Joi)
 
 // 7. 404 Route Handler
 app.use((req, res, next) => {
@@ -127,10 +127,9 @@ let server;
 const startServer = async () => {
   await connectDB();
   server = app.listen(PORT, () => {
-    console.log(`[Server] MLH Platform backend running on port ${PORT} [Mode: ${process.env.NODE_ENV || 'development'}]`);
+    console.log(`[Server] Crackly backend running on port ${PORT} [Mode: ${process.env.NODE_ENV || 'development'}]`);
     console.log(`[Server] Health check: http://localhost:${PORT}/api/health`);
-    console.log(`[Server] Auth endpoints: http://localhost:${PORT}/api/auth/register & /api/auth/login`);
-    console.log(`[Server] Opportunities: http://localhost:${PORT}/api/opportunities`);
+    console.log(`[Server] Presentations: http://localhost:${PORT}/api/presentations`);
   });
 };
 
