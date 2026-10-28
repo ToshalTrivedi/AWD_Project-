@@ -8,7 +8,7 @@ function escapeRegex(string) {
 
 /**
  * GET /api/opportunities
- * Query Params: category, search, page, limit
+ * Query Params: category, search, page, limit (pre-validated by Joi)
  */
 export const getOpportunities = async (req, res, next) => {
   try {
@@ -100,6 +100,7 @@ export const getOpportunityById = async (req, res, next) => {
 
 /**
  * POST /api/opportunities
+ * Validated by Joi createOpportunitySchema
  */
 export const createOpportunity = async (req, res, next) => {
   try {
@@ -118,29 +119,6 @@ export const createOpportunity = async (req, res, next) => {
       isDemo = false
     } = req.body;
 
-    // Strict validation
-    if (!title || typeof title !== 'string' || !title.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Opportunity title is required.'
-      });
-    }
-
-    if (!company || typeof company !== 'string' || !company.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: 'Company / organization name is required.'
-      });
-    }
-
-    const validCategories = ['Hackathon', 'Internship', 'Fresher Job'];
-    if (!category || !validCategories.includes(category)) {
-      return res.status(400).json({
-        success: false,
-        message: `Category must be one of: ${validCategories.join(', ')}.`
-      });
-    }
-
     // Process tags array
     let processedTags = [];
     if (Array.isArray(tags)) {
@@ -149,59 +127,65 @@ export const createOpportunity = async (req, res, next) => {
       processedTags = tags.split(',').map(t => t.trim()).filter(Boolean);
     }
 
-    // Basic structure for prep intelligence if provided or default
+    // Default structure for prep intelligence if empty
     const formattedPrep = {
-      roadmap: Array.isArray(prepIntelligence?.roadmap) ? prepIntelligence.roadmap : [
-        {
-          week: 1,
-          title: "Core Fundamentals & Setup",
-          goal: "Master foundational concepts and architecture",
-          tasks: ["Review project requirements & design spec", "Set up development stack and repository"],
-          milestone: "Fully functional starter scaffold ready"
-        },
-        {
-          week: 2,
-          title: "Core Implementation",
-          goal: "Develop key deliverables and features",
-          tasks: ["Build functional APIs and database schemas", "Connect UI components to endpoints"],
-          milestone: "Working end-to-end prototype"
-        },
-        {
-          week: 3,
-          title: "Testing, Edge Cases & Mock Evaluation",
-          goal: "Strengthen quality and rehearse technical pitch",
-          tasks: ["Handle offline fallbacks and error boundaries", "Conduct peer review and mock interview"],
-          milestone: "Robust, test-passing build"
-        },
-        {
-          week: 4,
-          title: "Final Polish, Documentation & Submission",
-          goal: "Finalize submission presentation and clean deploy",
-          tasks: ["Record 2-minute demo video", "Deploy to live staging environment"],
-          milestone: "Live deployed URL and submission delivered"
-        }
-      ],
-      technicalTopics: Array.isArray(prepIntelligence?.technicalTopics) ? prepIntelligence.technicalTopics : [
-        {
-          topic: "Full-Stack Architecture",
-          summary: "Understanding modular component breakdown, state flow, and asynchronous API communication.",
-          keyPoints: [
-            "Decouple presentation from API query logic",
-            "Maintain controlled graceful fallbacks",
-            "Follow strict REST semantics and validation"
-          ],
-          resources: ["https://developer.mozilla.org", "https://react.dev"]
-        }
-      ],
-      sampleQuestions: Array.isArray(prepIntelligence?.sampleQuestions) ? prepIntelligence.sampleQuestions : [
-        {
-          question: `How would you architect a solution tailored for this ${category.toLowerCase()} opportunity?`,
-          category: category === 'Hackathon' ? 'Hackathon Pitching' : 'System Design',
-          difficulty: 'Medium',
-          answer: "Focus on a clear separation of concerns: create a responsive accessible UI, backed by typed API endpoints with validation, database indexing, and comprehensive error handling.",
-          tips: ["Highlight performance optimizations", "Demonstrate offline resilience"]
-        }
-      ]
+      roadmap: Array.isArray(prepIntelligence?.roadmap) && prepIntelligence.roadmap.length > 0
+        ? prepIntelligence.roadmap
+        : [
+          {
+            week: 1,
+            title: "Core Fundamentals & Setup",
+            goal: "Master foundational concepts and architecture",
+            tasks: ["Review project requirements & design spec", "Set up development stack and repository"],
+            milestone: "Fully functional starter scaffold ready"
+          },
+          {
+            week: 2,
+            title: "Core Implementation",
+            goal: "Develop key deliverables and features",
+            tasks: ["Build functional APIs and database schemas", "Connect UI components to endpoints"],
+            milestone: "Working end-to-end prototype"
+          },
+          {
+            week: 3,
+            title: "Testing, Edge Cases & Mock Evaluation",
+            goal: "Strengthen quality and rehearse technical pitch",
+            tasks: ["Handle offline fallbacks and error boundaries", "Conduct peer review and mock interview"],
+            milestone: "Robust, test-passing build"
+          },
+          {
+            week: 4,
+            title: "Final Polish, Documentation & Submission",
+            goal: "Finalize submission presentation and clean deploy",
+            tasks: ["Record demo walkthrough", "Deploy to live staging environment"],
+            milestone: "Live deployed URL and submission delivered"
+          }
+        ],
+      technicalTopics: Array.isArray(prepIntelligence?.technicalTopics) && prepIntelligence.technicalTopics.length > 0
+        ? prepIntelligence.technicalTopics
+        : [
+          {
+            topic: "Full-Stack Architecture & Security",
+            summary: "Understanding modular component breakdown, state flow, Joi validation, and HTTP security headers.",
+            keyPoints: [
+              "Decouple presentation from API query logic",
+              "Enforce strict schema validation with Joi",
+              "Protect endpoints with Helmet HTTP security headers and rate limits"
+            ],
+            resources: ["https://developer.mozilla.org", "https://react.dev"]
+          }
+        ],
+      sampleQuestions: Array.isArray(prepIntelligence?.sampleQuestions) && prepIntelligence.sampleQuestions.length > 0
+        ? prepIntelligence.sampleQuestions
+        : [
+          {
+            question: `How would you architect a secure solution tailored for this ${category.toLowerCase()} opportunity?`,
+            category: category === 'Hackathon' ? 'Hackathon Pitching' : 'System Design',
+            difficulty: 'Medium',
+            answer: "Focus on a clean separation of concerns: create a responsive UI, backed by typed REST endpoints validated via Joi, password encryption using bcrypt, security headers with Helmet, and robust error handling.",
+            tips: ["Highlight security best practices", "Demonstrate offline resilience"]
+          }
+        ]
     };
 
     const newOpportunity = new Opportunity({
@@ -223,7 +207,7 @@ export const createOpportunity = async (req, res, next) => {
 
     return res.status(201).json({
       success: true,
-      message: 'Opportunity successfully created and indexed.',
+      message: 'Opportunity successfully created and indexed with Joi validation.',
       data: savedRecord
     });
   } catch (error) {
@@ -231,7 +215,7 @@ export const createOpportunity = async (req, res, next) => {
       const messages = Object.values(error.errors).map(val => val.message);
       return res.status(400).json({
         success: false,
-        message: 'Validation Error',
+        message: 'Mongoose Validation Error',
         errors: messages
       });
     }

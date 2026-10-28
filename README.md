@@ -201,3 +201,27 @@ npm run seed
   - Screening & Interview Bank with expandable answers, difficulty pills, and interview tips.
 - [x] Full keyboard navigation, `Escape` key listeners, and accessible contrast.
 - [x] Comprehensive footer with track navigation and clear independent MLH-inspired disclaimer.
+- [x] Full adherence to AWD B.Tech Semester-5 syllabus tasks (Security audit, comparative study, security libraries).
+
+---
+
+## 🎓 AWD Final Viva-Voce Submission & Evaluation
+
+This project fulfills all requirements for the **Advanced Web Development (AWD) B.Tech Semester-5 Final Viva-Voce Examination** at **ITM SLS BU**.
+
+### 1. Generated Academic Deliverables (in [`docs/`](docs/))
+- **Word Document:** [`docs/AWD_Final_Viva_Submission_Crackly.docx`](docs/AWD_Final_Viva_Submission_Crackly.docx) (Complete 20+ page formal academic report)
+- **PowerPoint Presentation:** [`docs/AWD_Final_Viva_Presentation_Crackly.pptx`](docs/AWD_Final_Viva_Presentation_Crackly.pptx) (13 widescreen presentation slides)
+- **Task 1 Report:** [`docs/TASK_1_COMPARATIVE_STUDY.md`](docs/TASK_1_COMPARATIVE_STUDY.md) (REST vs. GraphQL, MongoDB vs. MySQL, React vs. Angular, JWT vs. Session)
+- **Task 2 Report:** [`docs/TASK_2_SECURITY_AUDIT.md`](docs/TASK_2_SECURITY_AUDIT.md) (CVSS matrix, NoSQL injection, XSS, Weak Auth, Password Storage, Input Validation)
+- **Task 3 Report:** [`docs/TASK_3_SECURITY_LIBRARIES_DEMO.md`](docs/TASK_3_SECURITY_LIBRARIES_DEMO.md) (Helmet.js, bcrypt, and Joi implementation & execution logs)
+- **Viva Defense Guide:** [`docs/VIVA_PREPARATION_GUIDE.md`](docs/VIVA_PREPARATION_GUIDE.md) (Anticipated questions, ideal answers, and presentation tips)
+
+### 2. Live Security Libraries Verification (Task-3)
+To run the automated verification script for Helmet.js, bcrypt, and Joi:
+```bash
+cd server
+npm run demonstrate:security
+```
+*Executes HTTP header inspection, cost-10 salt/hash benchmarking, and Joi schema validation with zero failures.*
+

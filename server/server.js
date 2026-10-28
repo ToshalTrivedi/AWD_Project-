@@ -5,6 +5,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { connectDB, getDbStatus } from './config/db.js';
 import opportunityRoutes from './routes/opportunityRoutes.js';
+import authRoutes from './routes/authRoutes.js';
 
 // Load environment configuration
 dotenv.config();
@@ -13,8 +14,30 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 
-// 1. Security Headers via Helmet
-app.use(helmet());
+// 1. Security Headers via Helmet.js (Demonstrating AWD Task-3 Security Library 1)
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"],
+        styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+        fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+        imgSrc: ["'self'", 'data:', 'https:'],
+        connectSrc: ["'self'", 'http://localhost:5000', 'http://127.0.0.1:5000', 'http://localhost:5173']
+      }
+    },
+    crossOriginEmbedderPolicy: false, // Allow cross-origin asset loading in dev
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    dnsPrefetchControl: { allow: false },
+    frameguard: { action: 'deny' }, // Mitigate Clickjacking
+    hidePoweredBy: true, // Obscure Express server signature
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }, // Enforce HTTPS
+    noSniff: true, // Prevent MIME-type sniffing
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    xssFilter: true // Defend against reflected Cross-Site Scripting
+  })
+);
 
 // 2. CORS configuration restricted to configured frontend origin
 const allowedOrigins = [
@@ -65,12 +88,18 @@ app.get('/api/health', (req, res) => {
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     database: dbStatus,
+    security: {
+      helmet: 'Active (HTTP Security Headers)',
+      bcrypt: 'Active (Password Hashing & Verification)',
+      joi: 'Active (Strict Schema Input Validation)'
+    },
     platform: 'MLH-Inspired Opportunity & Prep Intelligence Platform'
   });
 });
 
-// 6. Mount Opportunity API Routes
-app.use('/api/opportunities', opportunityRoutes);
+// 6. Mount API Routes
+app.use('/api/auth', authRoutes); // User Registration & Login (bcrypt + Joi)
+app.use('/api/opportunities', opportunityRoutes); // Opportunity Catalog (Joi)
 
 // 7. 404 Route Handler
 app.use((req, res, next) => {
@@ -99,8 +128,9 @@ const startServer = async () => {
   await connectDB();
   server = app.listen(PORT, () => {
     console.log(`[Server] MLH Platform backend running on port ${PORT} [Mode: ${process.env.NODE_ENV || 'development'}]`);
-    console.log(`[Server] Health check available at: http://localhost:${PORT}/api/health`);
-    console.log(`[Server] Opportunities endpoint at: http://localhost:${PORT}/api/opportunities`);
+    console.log(`[Server] Health check: http://localhost:${PORT}/api/health`);
+    console.log(`[Server] Auth endpoints: http://localhost:${PORT}/api/auth/register & /api/auth/login`);
+    console.log(`[Server] Opportunities: http://localhost:${PORT}/api/opportunities`);
   });
 };
 
