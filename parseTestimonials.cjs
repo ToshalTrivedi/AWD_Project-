@@ -1,0 +1,11 @@
+const fs = require('fs');
+const content = fs.readFileSync('C:/Users/Toshal/.gemini/antigravity/brain/65e0f994-6489-457f-b2d7-a506d3ae8de1/.system_generated/steps/160/content.md', 'utf8');
+const marker = 'data-page="app"';
+const startIdx = content.indexOf(marker);
+const jsonStart = content.indexOf('{', startIdx);
+const jsonEnd = content.indexOf('</script>', jsonStart);
+const jsonStr = content.substring(jsonStart, jsonEnd);
+const data = JSON.parse(jsonStr);
+const sec = data.props.sections.find(s => s['@type'] === 'testimonials');
+fs.writeFileSync('C:/Users/Toshal/.gemini/antigravity/scratch/my-mlh-platform/testimonials.json', JSON.stringify(sec, null, 2));
+console.log('Successfully wrote testimonials.json');
